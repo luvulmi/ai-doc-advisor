@@ -1,0 +1,68 @@
+# Docker Compose 파일 버전 (3.8 버전 사용)
+version: '3.8'
+
+# 컨테이너 서비스들을 정의하는 섹션
+services:
+  # 1. PostgreSQL + pgvector (벡터 DB 역할까지 동시에 수행)
+  db:
+    # pgvector 확장이 포함된 PostgreSQL 16 이미지 사용
+    image: pgvector/pgvector:pg16
+    # 컨테이너 이름을 doc_advisor_db로 지정
+    container_name: doc_advisor_db
+    # 환경 변수 설정
+    environment:
+      # PostgreSQL 관리자 사용자 이름
+      POSTGRES_USER: admin
+      # PostgreSQL 관리자 비밀번호
+      POSTGRES_PASSWORD: adminpassword
+      # 생성할 기본 데이터베이스 이름
+      POSTGRES_DB: doc_advisor
+    # 포트 매핑 (호스트:컨테이너)
+    ports:
+      # 호스트의 5432 포트를 컨테이너의 5432 포트로 연결
+      - "5432:5432"
+    # 볼륨 마운트 설정
+    volumes:
+      # postgres_data 볼륨을 컨테이너의 PostgreSQL 데이터 디렉토리에 마운트
+      - postgres_data:/var/lib/postgresql/data
+    # 컨테이너가 중지되면 항상 자동으로 재시작
+    restart: always
+
+  # 2. Redis (LLM 응답 캐싱 및 세션 관리)
+  redis:
+    # 경량화된 Alpine Linux 기반 Redis 이미지 사용
+    image: redis:alpine
+    # 컨테이너 이름을 doc_advisor_redis로 지정
+    container_name: doc_advisor_redis
+    # 포트 매핑 (호스트:컨테이너)
+    ports:
+      # 호스트의 6379 포트를 컨테이너의 6379 포트로 연결
+      - "6379:6379"
+    # 컨테이너가 중지되면 항상 자동으로 재시작
+    restart: always
+
+  # 3. RabbitMQ (문서 파싱 및 벡터화 비동기 처리 큐)
+  rabbitmq:
+    # 관리 UI가 포함된 Alpine Linux 기반 RabbitMQ 3 이미지 사용
+    image: rabbitmq:3-management-alpine
+    # 컨테이너 이름을 doc_advisor_mq로 지정
+    container_name: doc_advisor_mq
+    # 환경 변수 설정
+    environment:
+      # RabbitMQ 기본 사용자 이름
+      RABBITMQ_DEFAULT_USER: guest
+      # RabbitMQ 기본 비밀번호
+      RABBITMQ_DEFAULT_PASS: guest
+    # 포트 매핑 (호스트:컨테이너)
+    ports:
+      # 호스트의 5672 포트를 컨테이너의 5672 포트로 연결 (AMQP 프로토콜용)
+      - "5672:5672"
+      # 호스트의 15672 포트를 컨테이너의 15672 포트로 연결 (관리 웹 UI용)
+      - "15672:15672"
+    # 컨테이너가 중지되면 항상 자동으로 재시작
+    restart: always
+
+# Docker 볼륨 정의 섹션
+volumes:
+  # PostgreSQL 데이터를 영구 저장하기 위한 명명된 볼륨
+  postgres_data:

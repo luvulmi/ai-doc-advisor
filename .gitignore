@@ -1,0 +1,43 @@
+# 환경 변수 및 설정 파일
+.env
+.env.local
+.env.*.local
+
+# 의존성 디렉토리
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+ENV/
+
+# IDE 설정
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 로그 파일
+*.log
+logs/
+
+# 데이터베이스
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker 볼륨 데이터
+postgres_data/
+
+# OS 파일
+.DS_Store
+Thumbs.db
+
+# 빌드 결과물
+dist/
+build/
+*.egg-info/
