@@ -1,7 +1,11 @@
 import logging
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
+from app.core.database import get_db
+from app.core.config import settings
 
 # 로깅 설정 (uvicorn과 같은 포맷으로 콘솔 출력)
 logging.basicConfig(
@@ -22,7 +26,7 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
 
 
 app = FastAPI(
-    title="AI-Doc Advisor API",
+    title=settings.PROJECT_NAME,
     description="사내 문서 AI 어드바이저 백엔드",
     version="1.0.0",
 )
@@ -47,10 +51,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+
 @app.get("/health", tags=["System"])
 async def health_check():
     return {
         "status": "ok",
-        "message": "서버 정상 작동 중! 🚀",
-        "developer": "똑똑"
+        "message": "서버 연결 완료.",
     }
+
+
+@app.get("/db-test", tags=["System"])
+async def db_test(db: Session = Depends(get_db)):
+    """
+    DB 연결 상태를 간단히 확인하는 엔드포인트.
+    """
+    try:
+        # 간단한 쿼리 실행
+        result = db.execute(text("SELECT 1")).scalar()
+        return {"status": "success", "message": f"DB 연결 완료. (응답: {result})"}
+    except Exception as e:
+        logger.exception("DB 연결 테스트 실패")
+        return {
+            "status": "error",
+            "message": f"{e.__class__.__name__}: DB 연결 중 오류가 발생했습니다.",
+        }
